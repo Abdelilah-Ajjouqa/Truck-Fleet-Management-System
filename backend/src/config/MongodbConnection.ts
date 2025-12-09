@@ -5,7 +5,7 @@ class MongodbConnection {
     isConnected: boolean;
 
     constructor(uri: string | undefined) {
-        this.uri = uri || "";
+        this.uri = uri || "mongodb://localhost:27017/Truck";
         this.isConnected = false;
     };
 

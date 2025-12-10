@@ -4,15 +4,26 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 class AuthService {
-    static async register(userData: Partial<UserType>): Promise<UserType> {
+
+    private static generateToken(user: UserType): string {
+        const secret: string | undefined = process.env.JWT_SECRET
+        if (!secret) throw new Error('token generator failed, check your variable');
+
+        return jwt.sign(
+            { id: user._id, role: user.role },
+            secret,
+            { expiresIn: "1d" }
+        )
+    }
+
+    static async register(userData: UserType): Promise<UserType> {
         const existingUser = await User.findOne({ email: userData.email });
         if (existingUser) {
             throw new Error("User already exists");
         }
 
         if (userData.password) {
-            const salt = await bcrypt.genSalt(10);
-            userData.password = await bcrypt.hash(userData.password, salt);
+            userData.password = await bcrypt.hash(userData.password, 10);
         }
 
         const newUser = await User.create(userData);
@@ -26,11 +37,7 @@ class AuthService {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) throw new Error("Invalid credentials");
 
-        const token = jwt.sign(
-            { id: user._id, role: user.role },
-            process.env.JWT_SECRET || "secret",
-            { expiresIn: "1d" }
-        );
+        const token = this.generateToken(user);
 
         return { user, token };
     }
